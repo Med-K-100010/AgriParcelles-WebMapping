@@ -1,4 +1,5 @@
 # 🌱 AgriParcelles — Application Web de Gestion des Parcelles Agricoles et de Suivi du NDVI
+![Vue principale de l'application AgriParcelles](docs/captures/carte_principale.png)
 
 **Projet académique de Web-Mapping — Institut Agronomique et Vétérinaire Hassan II (IAV Hassan II)**  
 **Département :** DSIA — Option IDSA  
