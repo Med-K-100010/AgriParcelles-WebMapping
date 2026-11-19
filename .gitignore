@@ -1,0 +1,46 @@
+
+# Environnements Python
+.venv/
+venv/
+env/
+
+# Fichiers temporaires Python
+__pycache__/
+*.py[cod]
+*.log
+
+# Configuration locale et secrets
+.env
+.env.*
+!.env.example
+
+# Authentification Google
+credentials/
+*service-account*.json
+*.pem
+*.key
+
+# Bases de données locales
+data/*.sqlite
+data/*.sqlite3
+data/*.db
+data/*.sqlite-*
+*.sqlite-wal
+*.sqlite-shm
+
+# Bibliothèques SpatiaLite Windows
+dependencies/spatialite/*.dll
+dependencies/spatialite/*.7z
+
+# Sauvegardes et archives
+Sauvegarde_*/
+*.zip
+
+# Éditeurs et fichiers système
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Bibliotheques locales SpatiaLite
+dependencies/spatialite/

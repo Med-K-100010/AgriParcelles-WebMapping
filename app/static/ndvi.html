@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Calcul NDVI — AgriParcelles</title><link rel="stylesheet" href="/static/css/ndvi.css"></head>
+<body>
+  <main class="ndvi-wrap">
+    <div class="eyebrow">SENTINEL‑2 · COPERNICUS/S2_SR_HARMONIZED</div>
+    <h1>Calcul du NDVI moyen</h1>
+    <p class="intro">Choisissez une période d'observation. Les scènes très nuageuses sont exclues et seuls les pixels SCL 4 (végétation) et 5 (sol nu) sont conservés.</p>
+    <form id="ndviForm">
+      <label>Numéro de parcelle<input id="numParcel" readonly></label>
+      <div class="date-grid">
+        <label>Date de début<input id="startDate" type="date" min="2019-01-01" required></label>
+        <label>Date de fin<input id="endDate" type="date" required></label>
+      </div>
+      <p class="hint">Période minimale : 10 jours. Dates autorisées : du 01/01/2019 à aujourd'hui.</p>
+      <p id="dateError" class="error" role="alert"></p>
+      <button id="calculateButton" type="submit">Calculer le NDVI</button>
+    </form>
+    <div id="loading" class="loading" hidden><span class="spinner"></span><span>Interrogation de Google Earth Engine…</span></div>
+    <section id="result" class="result" hidden aria-live="polite">
+      <div class="result-head"><span>NDVI moyen</span><strong id="ndviValue">—</strong></div>
+      <div class="result-line"><span>Images utilisées</span><strong id="imageCount">—</strong></div>
+      <div class="interpretation"><span class="eyebrow">INTERPRÉTATION</span><p id="ndviInterpretation"></p></div>
+      <p class="method-note">Moyenne temporelle du NDVI, puis moyenne spatiale à 10 m sur la géométrie de la parcelle.</p>
+    </section>
+    <p id="apiError" class="error api-error" role="alert"></p>
+    <footer>AgriParcelles · Valeur calculée à partir de Sentinel‑2 L2A.</footer>
+  </main>
+  <script src="/static/js/ndvi.js?v=ndvi-colors-1" defer></script>
+</body></html>

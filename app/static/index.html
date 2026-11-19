@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AgriParcelles — Souss / Ouled Teïma</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+  <link rel="stylesheet" href="https://unpkg.com/@geoman-io/leaflet-geoman-free@2.20.6/dist/leaflet-geoman.css">
+  <link rel="stylesheet" href="/static/css/app.css?v=sidebar-collapse-1">
+</head>
+<body>
+  <main id="map" aria-label="Carte interactive des parcelles agricoles"></main>
+
+  <aside id="sidebarPanel" class="sidebar">
+    <header class="brand">
+      <div class="brand-mark">AP</div>
+      <div><h1>AgriParcelles</h1><p>Gestion agricole · NDVI Sentinel‑2</p></div>
+    </header>
+
+    <section class="study-card">
+      <div class="eyebrow">ZONE ATTRIBUÉE · Z5</div>
+      <h2>Souss — Ouled Teïma</h2>
+      <p>Point de référence : <strong>−9,21 ; 30,40</strong></p>
+      <p class="muted">Objectif : au moins 15 parcelles réelles dans un rayon d'environ 10 km.</p>
+      <button id="btnStudyArea" class="btn btn-primary btn-full">Voir la zone d'étude</button>
+    </section>
+
+    <section class="panel-section">
+      <h3>Navigation</h3>
+      <button id="btnMorocco" class="btn btn-secondary btn-full">Vue Maroc</button>
+      <div class="coord-grid">
+        <label>Longitude (X)
+          <input id="longitude" type="number" min="-17.5" max="-0.9" step="any" value="-9.21" inputmode="decimal">
+        </label>
+        <label>Latitude (Y)
+          <input id="latitude" type="number" min="20.5" max="36.1" step="any" value="30.40" inputmode="decimal">
+        </label>
+      </div>
+      <button id="btnGoCoordinates" class="btn btn-outline btn-full">Aller aux coordonnées</button>
+      <p id="coordinateError" class="field-error" role="alert"></p>
+    </section>
+
+    <section class="panel-section">
+      <h3>Gestion des parcelles</h3>
+      <div class="stat-row"><span>Parcelles enregistrées</span><strong id="parcelCount">0 / 15</strong></div>
+      <div class="progress-track"><div id="parcelProgress" class="progress-fill"></div></div>
+      <button id="btnNewParcel" class="btn btn-primary btn-full">＋ Nouvelle parcelle</button>
+      <button id="btnCancelDrawing" class="btn btn-muted btn-full" disabled>Annuler le dessin</button>
+      <p id="drawStatus" class="muted small" aria-live="polite">Activez le dessin pour tracer un polygone sur l'image satellite.</p>
+    </section>
+
+    <section class="panel-section parcel-navigation">
+      <h3>Navigation entre parcelles</h3>
+      <label class="parcel-nav-label" for="parcelNavigator">Parcelle digitalisée</label>
+      <select id="parcelNavigator" class="parcel-nav-select">
+        <option value="">Aucune parcelle enregistrée</option>
+      </select>
+      <div class="parcel-nav-actions">
+        <button id="btnPrevParcel" class="btn btn-secondary" type="button" disabled>← Précédente</button>
+        <button id="btnNextParcel" class="btn btn-secondary" type="button" disabled>Suivante →</button>
+      </div>
+      <button id="btnFocusParcel" class="btn btn-outline btn-full" type="button" disabled>⌖ Localiser la parcelle</button>
+      <button id="btnDeleteParcel" class="btn btn-danger btn-full" type="button" disabled>Supprimer la parcelle sélectionnée</button>
+      <button id="btnToggleParcels" class="btn btn-muted btn-full" type="button">Masquer les parcelles</button>
+      <p class="muted small">Choisissez une parcelle pour la localiser sur la carte. Vous pouvez aussi parcourir les parcelles avec les boutons précédent et suivant.</p>
+    </section>
+
+    <section class="panel-section">
+      <h3>Télédétection</h3>
+      <button id="btnSelectParcel" class="btn btn-dark btn-full">◎ Sélectionner une parcelle</button>
+      <p class="muted small">Cliquez ensuite sur un polygone pour ouvrir le calcul NDVI dans la fenêtre flottante.</p>
+    </section>
+
+    <footer class="sidebar-footer">
+      <span class="status-dot"></span><span id="apiStatus">Connexion au serveur…</span>
+      <div class="credits-note">Fonds : OpenTopoMap · Esri World Imagery. Attributions détaillées sur la carte.</div>
+    </footer>
+  </aside>
+
+  <button id="btnSidebarToggle" class="sidebar-toggle" type="button"
+          aria-controls="sidebarPanel" aria-expanded="true"
+          aria-label="Masquer le panneau latéral" title="Masquer le panneau latéral">
+    <span aria-hidden="true">‹</span>
+  </button>
+
+  <div id="mouseCoordinates" class="map-readout">Lat — · Lon —</div>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <section id="parcelModal" class="modal-backdrop" hidden aria-labelledby="modalTitle">
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <div class="modal-head"><div><span class="eyebrow">NOUVELLE ENTITÉ SPATIALE</span><h2 id="modalTitle">Enregistrer une parcelle</h2></div><button id="btnCloseModal" class="icon-button" aria-label="Fermer">×</button></div>
+      <form id="parcelForm">
+        <label>Numéro de parcelle <span class="required">*</span><input id="parcelNumber" name="num_parcelle" maxlength="80" required placeholder="Ex. OT-001"></label>
+        <label>Nom de l'agriculteur <span class="required">*</span><input id="farmerName" name="agriculteur" maxlength="150" required placeholder="Nom complet"></label>
+        <label>Culture <span class="required">*</span>
+          <select id="crop" name="culture" required>
+            <option value="">Choisir une culture</option>
+            <option>Blé dur</option><option>Blé tendre</option><option>Orge</option><option>Maïs</option><option>Betterave sucrière</option><option>Olivier</option><option>Agrumes</option><option>Maraîchage</option><option>Luzerne</option><option>Jachère</option><option>Autre</option>
+          </select>
+        </label>
+        <label>Superficie calculée (ha)<input id="areaHa" readonly value="Calcul en cours…"><small>Calcul ellipsoïdal par SpatiaLite ; la valeur définitive est recalculée au moment de l'enregistrement.</small></label>
+        <label>Production (t) <span class="required">*</span><input id="production" name="production_t" type="number" min="0" step="any" required placeholder="0"></label>
+        <p id="parcelFormError" class="field-error" role="alert"></p>
+        <div class="modal-actions"><button type="button" id="btnDiscardParcel" class="btn btn-muted">Annuler</button><button type="submit" id="btnSaveParcel" class="btn btn-primary">Enregistrer la parcelle</button></div>
+      </form>
+    </div>
+  </section>
+
+  <section id="ndviPanel" class="ndvi-panel" hidden aria-label="Calcul NDVI">
+    <header id="ndviDragHandle" class="ndvi-panel-head"><div><span class="eyebrow">ANALYSE SENTINEL‑2</span><strong id="ndviPanelTitle">NDVI — Parcelle</strong></div><button id="btnCloseNdvi" class="icon-button" aria-label="Fermer la fenêtre NDVI">×</button></header>
+    <iframe id="ndviFrame" title="Formulaire de calcul du NDVI" src="about:blank"></iframe>
+  </section>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script src="https://unpkg.com/@geoman-io/leaflet-geoman-free@2.20.6/dist/leaflet-geoman.js"></script>
+  <script src="/static/js/app.js?v=sidebar-collapse-1" defer></script>
+</body>
+</html>
